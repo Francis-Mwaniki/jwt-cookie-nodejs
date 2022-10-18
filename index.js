@@ -9,7 +9,12 @@ const User = require("./model/user");
 const port = 5000;
 const app = express();
 
-app.use(cors({ credentials: true }));
+app.use(
+  cors({
+    credentials: true,
+    origin: ["http://localhost:3000"],
+  })
+);
 app.use(bodyParser.json());
 app.use(cookieParser());
 mongoose.connect("mongodb://localhost:27017/jwtAndNuxt", () => {
@@ -37,6 +42,7 @@ app.post("/login", async (req, res) => {
   let user = await User.findOne({ email: req.body.email });
   let validPass = await bcrypt.compare(req.body.password, user.password);
   if (!user) {
+    console.log("User not found");
     return res.json({ message: "User not found" });
   } else if (!validPass) {
     return res.status(404).send({ message: "Invalid Credential" });
@@ -58,8 +64,8 @@ app.get("/user", async (req, res) => {
       return res.status(401).send({ message: "Unauthenticated" });
     }
     const user = await User.findOne({ id: claim._id });
-    const { password, ...data } = await user.toJSON();
-    console.log(data);
+    console.log(user);
+    return res.send({ message: user });
   } catch (error) {
     return res.status(401).send({ message: "Unauthenticated" });
   }
