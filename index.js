@@ -6,13 +6,13 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const User = require("./model/user");
-const port = 5000;
+const port = process.env.PORT || 7000;
 const app = express();
 
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "http://localhost:3001"],
   })
 );
 app.use(bodyParser.json());
@@ -36,23 +36,29 @@ app.post("/register", async (req, res) => {
     password: hashedPassword,
   });
   await user.save();
-  res.send(`${user.name} created successfully`);
+  let { password, ...data } = user.toJSON();
+  res.send({ message: `${data.name} created successfully` });
 });
 app.post("/login", async (req, res) => {
-  let user = await User.findOne({ email: req.body.email });
-  let validPass = await bcrypt.compare(req.body.password, user.password);
-  if (!user) {
-    console.log("User not found");
-    return res.json({ message: "User not found" });
-  } else if (!validPass) {
-    return res.status(404).send({ message: "Invalid Credential" });
-  } else {
-    const token = jwt.sign({ id: user._id }, "secret");
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 100, //i day
-    });
-    res.send({ message: "success" });
+  try {
+    let user = await User.findOne({ email: req.body.email });
+    let { password, ...data } = user.toJSON();
+    let validPass = await bcrypt.compare(req.body.password, user.password);
+    if (!user) {
+      console.log("User not found");
+      return res.json({ message: "User not found" });
+    } else if (!validPass) {
+      return res.status(404).send({ message: "Invalid Credential" });
+    } else {
+      const token = jwt.sign({ id: user._id }, "secret");
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 100, //i day
+      });
+      res.send({ message: "success" });
+    }
+  } catch (error) {
+    res.status(404).send({ message: "error" });
   }
 });
 app.get("/user", async (req, res) => {
@@ -64,8 +70,9 @@ app.get("/user", async (req, res) => {
       return res.status(401).send({ message: "Unauthenticated" });
     }
     const user = await User.findOne({ id: claim._id });
-    console.log(user);
-    return res.send({ message: user });
+    let { password, ...data } = user.toJSON();
+    console.log(data);
+    return res.send({ message: data });
   } catch (error) {
     return res.status(401).send({ message: "Unauthenticated" });
   }
