@@ -84,6 +84,13 @@ app.post("/logout", (req, res) => {
 
   return res.send({ message: "success" });
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(__dirname + "/dist/"));
+  app.get("*", (req, res) => {
+    res.sendFile(__dirname + "/dist/index.html");
+  });
+}
 app.listen(port, () => {
   console.log("Server listening on port " + port);
 });
