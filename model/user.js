@@ -8,7 +8,6 @@ const Useschema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
   },
   password: {
     type: String,
@@ -16,4 +15,4 @@ const Useschema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("User", Useschema);
+module.exports = mongoose.model("jwtUser", Useschema);
