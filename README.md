@@ -13,7 +13,7 @@ npm i
 ```
 - clone this repo
 ```sh
-git clone 
+git clone git@github.com:Francis-Mwaniki/jwt-cookie-nodejs.git
 ```
 
 
