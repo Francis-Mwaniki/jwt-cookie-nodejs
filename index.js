@@ -28,7 +28,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/register", async (req, res) => {
+app.post("/api/v1/register", async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   console.log(req.body);
   const hashedPassword = await bcrypt.hash(req.body.password, salt);
@@ -41,7 +41,7 @@ app.post("/register", async (req, res) => {
   let { password, ...data } = user.toJSON();
   res.send({ message: `${data.name} created successfully` });
 });
-app.post("/login", async (req, res) => {
+app.post("/api/v1/login", async (req, res) => {
   try {
     let user = await jwtUser.findOne({ email: req.body.email });
     let { password, ...data } = user.toJSON();
@@ -52,7 +52,7 @@ app.post("/login", async (req, res) => {
     } else if (!validPass) {
       return res.status(404).send({ message: "Invalid Credential" });
     } else {
-      const token = jwt.sign({ id: user._id }, "secret");
+      const token = jwt.sign({ _id: user._id }, process.env.SECRET);
       res.cookie("jwt", token, {
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 100, //i day
@@ -63,34 +63,26 @@ app.post("/login", async (req, res) => {
     res.status(404).send({ message: "error" });
   }
 });
-app.get("/user", async (req, res) => {
+app.get("/api/v1/user", async (req, res) => {
   try {
     const cookie = req.cookies;
 
-    const claim = jwt.verify(cookie.jwt, "secret");
+    const claim = jwt.verify(cookie.jwt, process.env.SECRET);
     if (!claim) {
-      return res.status(401).send({ message: "Unauthenticated" });
+      return res.status(401).send({ message: "You're not signed in!!" });
     }
-    const user = await jwtUser.findOne({ id: claim._id });
+    const user = await jwtUser.findOne({ _id: claim._id });
     let { password, ...data } = user.toJSON();
-    console.log(data);
     return res.send({ message: data });
   } catch (error) {
-    return res.status(401).send({ message: "Unauthenticated" });
+    return res.status(401).send({ message: "You're not signed in!!" });
   }
 });
-app.post("/logout", (req, res) => {
-  res.cookie("jwt", "", { maxAge: 1 });
+app.post("/api/v1/logout", (req, res) => {
+  res.cookie("jwt", "", { maxAge: 0 });
 
-  return res.send({ message: "success" });
+  return res.send({ message: "You logged out!!" });
 });
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(__dirname + "/dist/"));
-  app.get("*", (req, res) => {
-    res.sendFile(__dirname + "/dist/index.html");
-  });
-}
 app.listen(port, () => {
   console.log("Server listening on port " + port);
 });
