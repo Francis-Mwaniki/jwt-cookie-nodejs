@@ -22,12 +22,6 @@ dotenv.config();
 mongoose.connect(process.env.DB_CONNECT, () => {
   console.log("connected to db");
 });
-app.get("/", (req, res) => {
-  res.json({
-    message: "Welcome to my api",
-  });
-});
-
 app.post("/api/v1/register", async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   console.log(req.body);
@@ -83,6 +77,13 @@ app.post("/api/v1/logout", (req, res) => {
 
   return res.send({ message: "You logged out!!" });
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(__dirname + "/dist/"));
+  app.get("*", (req, res) => {
+    res.sendFile(__dirname + "/dist/index.html");
+  });
+}
 app.listen(port, () => {
   console.log("Server listening on port " + port);
 });
